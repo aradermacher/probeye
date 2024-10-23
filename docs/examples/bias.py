@@ -114,7 +114,7 @@ class LinearModel(ForwardModelBase):
         b_dist = chaospy.Normal(0.0, b)
 
         # generate the polynomial chaos expansion
-        expansion = chaospy.generate_expansion(self.pce_order, bias_dist)
+        expansion = chaospy.generate_expansion(self.pce_order, b_dist)
 
         # generate quadrature nodes and weights
         sparse_quads = chaospy.generate_quadrature(
