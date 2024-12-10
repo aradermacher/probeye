@@ -19,6 +19,8 @@ from probeye.subroutines import stream_to_logger
 from probeye.subroutines import print_dict_in_rows
 from probeye.subroutines import extract_true_values
 
+from multiprocessing import Pool
+
 # imports only needed for type hints
 if TYPE_CHECKING:  # pragma: no cover
     from probeye.definition.inverse_problem import InverseProblem
@@ -220,54 +222,59 @@ class EmceeSolver(ScipySolver):
             return logprior + self.loglike(x)
 
         logger.debug("Setting up EnsembleSampler")
-        sampler = emcee.EnsembleSampler(
-            nwalkers=n_walkers,
-            ndim=self.problem.n_latent_prms_dim,
-            log_prob_fn=logprob,
-            **kwargs,
-        )
+        print('using multiprocessing!!')
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(
+                nwalkers=n_walkers,
+                ndim=self.problem.n_latent_prms_dim,
+                log_prob_fn=logprob,
+                pool=pool,
+                **kwargs,
+            )
 
-        if self.seed is not None:
-            random.seed(self.seed)
-            sampler.random_state = np.random.mtrand.RandomState(self.seed)
+            if self.seed is not None:
+                random.seed(self.seed)
+                sampler.random_state = np.random.mtrand.RandomState(self.seed)
 
-        # ............................................................................ #
-        #        Initial sampling, burn-in: used to avoid a poor starting point        #
-        # ............................................................................ #
+            # ............................................................................ #
+            #        Initial sampling, burn-in: used to avoid a poor starting point        #
+            # ............................................................................ #
 
-        logger.debug("Starting sampling (initial + main)")
-        start = time.time()
-        state = sampler.run_mcmc(
-            initial_state=sampling_initial_positions,
-            nsteps=n_initial_steps,
-            progress=self.show_progress,
-        )
-        sampler.reset()
+            logger.debug("Starting sampling (initial + main)")
+            start = time.time()
+            state = sampler.run_mcmc(
+                initial_state=sampling_initial_positions,
+                nsteps=n_initial_steps,
+                progress=self.show_progress,
+            )
+            sampler.reset()
 
         # ............................................................................ #
         #                          Sampling of the posterior                           #
         # ............................................................................ #
-        sampler.run_mcmc(
-            initial_state=state, nsteps=n_steps, progress=self.show_progress
-        )
-        end = time.time()
-        runtime_str = pretty_time_delta(end - start)
-        logger.info(
-            f"Sampling of the posterior distribution completed: {n_steps} steps and "
-            f"{n_walkers} walkers."
-        )
-        logger.info(f"Total run-time (including initial sampling): {runtime_str}.")
-        logger.info("")
-        logger.info("Summary of sampling results (emcee)")
-        posterior_samples = sampler.get_chain(flat=True)
-        with contextlib.redirect_stdout(stream_to_logger("INFO")):  # type: ignore
-            self.summary = self.emcee_summary(
-                posterior_samples, true_values=true_values
+            sampler.run_mcmc(
+                initial_state=state, nsteps=n_steps, progress=self.show_progress
             )
-        logger.info("")  # empty line for visual buffer
-        self.raw_results = sampler
+            end = time.time()
 
-        # translate the results to a common data structure and return it
-        var_names = self.problem.get_theta_names(tex=True, components=True)
-        inference_data = az.from_emcee(sampler, var_names=var_names)
+            runtime_str = pretty_time_delta(end - start)
+            logger.info(
+                f"Sampling of the posterior distribution completed: {n_steps} steps and "
+                f"{n_walkers} walkers."
+            )
+            logger.info(f"Total run-time (including initial sampling): {runtime_str}.")
+            logger.info("")
+            logger.info("Summary of sampling results (emcee)")
+            posterior_samples = sampler.get_chain(flat=True)
+            with contextlib.redirect_stdout(stream_to_logger("INFO")):  # type: ignore
+                self.summary = self.emcee_summary(
+                    posterior_samples, true_values=true_values
+                )
+            logger.info("")  # empty line for visual buffer
+            self.raw_results = sampler
+
+            # translate the results to a common data structure and return it
+            var_names = self.problem.get_theta_names(tex=True, components=True)
+            inference_data = az.from_emcee(sampler, var_names=var_names)
+            
         return inference_data
