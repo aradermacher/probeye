@@ -233,7 +233,7 @@ class GlobalMomentMatchingModelError(EmbeddedUncorrelatedModelError):
         population_variance = (
             self.gamma**2 * np.mean(np.square(residual_vector))
             + variance_residual
-            + variance
+            # + variance
         )
 
         # Calculate the log-likelihood
@@ -294,7 +294,8 @@ class RelativeGlobalMomentMatchingModelError(EmbeddedUncorrelatedModelError):
 
         # Calculate the intermediate statistics
         sigma_model_population = np.sqrt(
-            self.gamma**2 * np.square(residual_vector) + variance
+            self.gamma**2 * np.square(residual_vector) 
+            # + variance
         )
         sigma_model_sample = np.sqrt(np.square(response_vector[1]) + variance)
         population_variance = (
