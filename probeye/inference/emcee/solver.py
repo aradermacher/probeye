@@ -19,7 +19,11 @@ from probeye.subroutines import stream_to_logger
 from probeye.subroutines import print_dict_in_rows
 from probeye.subroutines import extract_true_values
 
-from multiprocessing import Pool
+from multiprocessing import Pool #pickling problem
+#from multiprocessing.pool import ThreadPool as Pool # no pickling needed but no time effect
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 # imports only needed for type hints
 if TYPE_CHECKING:  # pragma: no cover
@@ -151,6 +155,7 @@ class EmceeSolver(ScipySolver):
         n_steps: int = 1000,
         n_initial_steps: int = 100,
         true_values: Optional[dict] = None,
+        n_processes: int = Pool()._processes,
         **kwargs,
     ) -> az.data.inference_data.InferenceData:
         """
@@ -167,6 +172,8 @@ class EmceeSolver(ScipySolver):
             Number of steps for initial (burn-in) sampling.
         true_values
             True parameter values, if known.
+        n_processes
+            Number of processes to use for parallel sampling.
         kwargs
             Additional key-word arguments channeled to emcee.EnsembleSampler.
 
@@ -211,6 +218,8 @@ class EmceeSolver(ScipySolver):
         #                                 Pre-process                                  #
         # ............................................................................ #
 
+        
+        global logprob
         def logprob(x):
             # Skip loglikelihood evaluation if logprior is equal
             # to negative infinity
@@ -222,8 +231,10 @@ class EmceeSolver(ScipySolver):
             return logprior + self.loglike(x)
 
         logger.debug("Setting up EnsembleSampler")
-        print('using multiprocessing!!')
-        with Pool() as pool:
+        
+        
+        with Pool(processes=n_processes) as pool:
+            logger.info("fparallel sampling using multiprocessing with {pool}")
             sampler = emcee.EnsembleSampler(
                 nwalkers=n_walkers,
                 ndim=self.problem.n_latent_prms_dim,
