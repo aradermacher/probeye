@@ -234,7 +234,7 @@ class EmceeSolver(ScipySolver):
         
         
         with Pool(processes=n_processes) as pool:
-            logger.info("fparallel sampling using multiprocessing with {pool}")
+            logger.info(f"parallel sampling using multiprocessing with {pool}")
             sampler = emcee.EnsembleSampler(
                 nwalkers=n_walkers,
                 ndim=self.problem.n_latent_prms_dim,

@@ -274,7 +274,7 @@ class EmbeddedPCESolver(EmceeSolver):
         logger.debug("Setting up EnsembleSampler")
 
         with Pool(processes=n_processes) as pool:
-            logger.info("fparallel sampling using multiprocessing with {pool}")
+            logger.info(f"parallel sampling using multiprocessing with {pool}")
             self.sampler = emcee.EnsembleSampler(
                 nwalkers=n_walkers,
                 ndim=self.problem.n_latent_prms_dim,
