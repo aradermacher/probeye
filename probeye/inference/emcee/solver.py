@@ -19,9 +19,11 @@ from probeye.subroutines import stream_to_logger
 from probeye.subroutines import print_dict_in_rows
 from probeye.subroutines import extract_true_values
 
-from multiprocessing import Pool #pickling problem
-#from multiprocessing.pool import ThreadPool as Pool # no pickling needed but no time effect
+from multiprocessing import Pool  # pickling problem
+
+# from multiprocessing.pool import ThreadPool as Pool # no pickling needed but no time effect
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
@@ -218,8 +220,8 @@ class EmceeSolver(ScipySolver):
         #                                 Pre-process                                  #
         # ............................................................................ #
 
-        
         global logprob
+
         def logprob(x):
             # Skip loglikelihood evaluation if logprior is equal
             # to negative infinity
@@ -231,8 +233,7 @@ class EmceeSolver(ScipySolver):
             return logprior + self.loglike(x)
 
         logger.debug("Setting up EnsembleSampler")
-        
-        
+
         with Pool(processes=n_processes) as pool:
             logger.info(f"parallel sampling using multiprocessing with {pool}")
             sampler = emcee.EnsembleSampler(
@@ -260,9 +261,9 @@ class EmceeSolver(ScipySolver):
             )
             sampler.reset()
 
-        # ............................................................................ #
-        #                          Sampling of the posterior                           #
-        # ............................................................................ #
+            # ............................................................................ #
+            #                          Sampling of the posterior                           #
+            # ............................................................................ #
             sampler.run_mcmc(
                 initial_state=state, nsteps=n_steps, progress=self.show_progress
             )
@@ -287,5 +288,5 @@ class EmceeSolver(ScipySolver):
             # translate the results to a common data structure and return it
             var_names = self.problem.get_theta_names(tex=True, components=True)
             inference_data = az.from_emcee(sampler, var_names=var_names)
-            
+
         return inference_data

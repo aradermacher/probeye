@@ -24,9 +24,11 @@ from probeye.subroutines import pretty_time_delta
 from probeye.subroutines import stream_to_logger
 from probeye.subroutines import print_dict_in_rows
 
-from multiprocessing import Pool #pickling problem
-#from multiprocessing.pool import ThreadPool as Pool # no pickling needed but no time effect
+from multiprocessing import Pool  # pickling problem
+
+# from multiprocessing.pool import ThreadPool as Pool # no pickling needed but no time effect
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
@@ -261,6 +263,7 @@ class EmbeddedPCESolver(EmceeSolver):
         #                                 Pre-process                                  #
         # ............................................................................ #
         global logprob
+
         def logprob(x):
             # Skip loglikelihood evaluation if logprior is equal
             # to negative infinity
@@ -281,7 +284,7 @@ class EmbeddedPCESolver(EmceeSolver):
                 log_prob_fn=logprob,
                 pool=pool,
                 **kwargs,
-                )
+            )
 
             if self.seed is not None:
                 random.seed(self.seed)
